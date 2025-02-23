@@ -31,18 +31,19 @@ char backBuffer[MAP_HEIGHT][MAP_WIDTH];
 
 // Helper to copy one buffer to another
 void copyBuffer(char dest[MAP_HEIGHT][MAP_WIDTH], char src[MAP_HEIGHT][MAP_WIDTH]) {
-    for (int y = 0; y < MAP_HEIGHT; y++) {
-        for (int x = 0; x < MAP_WIDTH; x++) {
-            dest[y][x] = src[y][x];
+    // Simple character by character copy, row major
+    for(int i = 0; i < MAP_HEIGHT; i++){
+        for(int j = 0; j < MAP_WIDTH; j++){
+            dest[i][j] = src[i][j];
         }
     }
 }
 
 // Initialize buffers
 void clearBuffer(char buffer[MAP_HEIGHT][MAP_WIDTH]) {
-    for (int y = 0; y < MAP_HEIGHT; y++) {
-        for (int x = 0; x < MAP_WIDTH; x++) {
-            buffer[y][x] = ' ';
+    for (int i = 0; i < MAP_HEIGHT; i++) {
+        for (int j = 0; j < MAP_WIDTH; j++) {
+            buffer[i][j] = ' ';
         }
     }
 }
@@ -52,10 +53,14 @@ void renderBuffer(char buffer[MAP_HEIGHT][MAP_WIDTH]) {
     // Move cursor to (0,0) in ncurses
     move(0, 0);
 
-    for (int y = 0; y < MAP_HEIGHT; y++) {
-        for (int x = 0; x < MAP_WIDTH; x++) {
-            addch(buffer[y][x]);
+    // NOTE: There is a potential weakness here - this function
+    // assumes that the 'canvas' dimensions match MAP_HEIGHT and
+    // MAP_WIDTH.
+    for (int i = 0; i < MAP_HEIGHT; i++) {
+        for (int j = 0; j < MAP_WIDTH; j++) {
+            addch(buffer[i][j]);
         }
+        // After all chars for a row are copied, move to next row
         addch('\n');
     }
 }
