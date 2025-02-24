@@ -66,6 +66,7 @@ void renderBuffer(char buffer[MAP_HEIGHT][MAP_WIDTH]) {
 }
 
 // Populate the backBuffer based on the level data, the camera offset, and the player's position
+// The backBuffer is essentially the next state of all objects on the screen.
 void updateBackBuffer() {
     clearBuffer(backBuffer);
 
@@ -73,13 +74,16 @@ void updateBackBuffer() {
     // We'll treat the top row of the screen as cameraY in the level
     for (int screenY = 0; screenY < MAP_HEIGHT; screenY++) {
         int levelY = screenY + cameraY;
+        // Given we only scroll in the Y direction, we only perform
+        // bounds checking in the vertical direction.
         if (levelY < 0 || levelY >= (int)level.size()) {
-            // outside the level, just fill with blank or walls
+            // outside the level, just fill with blanks
             for (int x = 0; x < MAP_WIDTH; x++) {
                 backBuffer[screenY][x] = ' ';
             }
         } else {
             for (int x = 0; x < MAP_WIDTH; x++) {
+                // If within bounds, fill using the level geometry
                 backBuffer[screenY][x] = level[levelY][x];
             }
         }
@@ -97,6 +101,12 @@ bool checkCollision() {
     if (levelY >= 0 && levelY < (int)level.size()) {
         if (level[levelY][playerX] == '#') {
             return true; // collision with a wall
+        }
+        // Check if collision on either side of player
+        // playerX > 0, playerX < MAP_WIDTH always
+        // for altlevel, where walls use a different character
+        if(level[levelY][playerX - 1] == '|' || level[levelY][playerX + 1] == '|'){
+            return true;
         }
     }
     return false;
