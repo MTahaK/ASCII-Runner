@@ -132,7 +132,7 @@ int main() {
         auto frameStart = std::chrono::steady_clock::now();
 
         // 1. Input
-        int ch = getch();
+        int ch = getch(); // Non-blocking due to nodelay()
         if (ch != ERR) {
             switch (ch) {
                 case KEY_LEFT:
