@@ -7,9 +7,9 @@
 
 /* FIRST DRAFT BASED OFF OF CODE FROM CHATGPT */
 
-
+auto level = level4;
 // Game constants
-const int FPS = 60;
+const int FPS = 30;
 const double FRAME_TIME = 1000.0 / FPS; // in milliseconds
 
 // The map dimensions
@@ -127,6 +127,8 @@ int main() {
 
     bool running = true;
     bool win = false; // if the player reaches the end
+    bool dir_pressed = false;
+    int last_key = 0;
 
     while (running) {
         auto frameStart = std::chrono::steady_clock::now();
@@ -134,6 +136,22 @@ int main() {
         // 1. Input
         int ch = getch(); // Non-blocking due to nodelay()
         if (ch != ERR) {
+            while(getch() == ch);
+        }
+            if(last_key != 0){
+                // Continue moving in the last direction without any key press
+                if( last_key == 'a' || last_key == KEY_LEFT){
+                    if (playerX > 1) {
+                        playerX--; // Minimal movement
+                    }
+                }
+                if( last_key == 'd' || last_key == KEY_RIGHT){
+                    if (playerX < MAP_WIDTH - 2) {
+                        playerX++;
+                    }
+                }
+
+            }
             switch (ch) {
                 // Idea: SHIFT+Arrow Key moves player 2 spaces left or right?
                 case KEY_LEFT:
@@ -143,7 +161,12 @@ int main() {
                         // if (playerX > 2 && level[playerY][playerX - 2] != '#') {
                         //     playerX -= 2;
                         // } else 
-                        playerX--; // Minimal movement
+                        if(!dir_pressed || last_key == 'd' || last_key == KEY_RIGHT){ 
+                            // If the player is not moving or was moving right, allow left movement
+                            playerX--; // Minimal movement
+                            last_key = ch;
+                            dir_pressed = true;
+                        }
                     }
                     break;
                 case KEY_RIGHT:
@@ -153,17 +176,27 @@ int main() {
                         // if (playerX < MAP_WIDTH - 3 && level[playerY][playerX + 2] != '#') {
                         //     playerX += 2;
                         // } else 
-                        playerX++;
+                        if(!dir_pressed || last_key == 'a' || last_key == KEY_LEFT){
+                            // If the player is not moving or was moving left, allow right movement
+                            playerX++;
+                            last_key = ch;
+                            dir_pressed = true;
+                        }
                     }
                     break;
                 case 'q':
                     // Quit
                     running = false;
                     break;
+                case ' ':
+                    // If spacebar is pressed, stop the sideways movement
+                    last_key = 0;
+                    dir_pressed = false;
+                    break;
                 default:
                     break;
             }
-        }
+        
 
         // 2. Update logic
         // The player automatically moves "forward" => downward in this example
