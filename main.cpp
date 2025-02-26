@@ -9,7 +9,7 @@
 
 
 // Game constants
-const int FPS = 30;
+const int FPS = 60;
 const double FRAME_TIME = 1000.0 / FPS; // in milliseconds
 
 // The map dimensions
@@ -135,15 +135,24 @@ int main() {
         int ch = getch(); // Non-blocking due to nodelay()
         if (ch != ERR) {
             switch (ch) {
+                // Idea: SHIFT+Arrow Key moves player 2 spaces left or right?
                 case KEY_LEFT:
                 case 'a':
                     if (playerX > 1) {
-                        playerX--;
+                        // Check if possible to move the player 2 spots left instead
+                        // if (playerX > 2 && level[playerY][playerX - 2] != '#') {
+                        //     playerX -= 2;
+                        // } else 
+                        playerX--; // Minimal movement
                     }
                     break;
                 case KEY_RIGHT:
                 case 'd':
                     if (playerX < MAP_WIDTH - 2) {
+                        // Check if possible to move the player 2 spots right instead
+                        // if (playerX < MAP_WIDTH - 3 && level[playerY][playerX + 2] != '#') {
+                        //     playerX += 2;
+                        // } else 
                         playerX++;
                     }
                     break;
@@ -160,10 +169,6 @@ int main() {
         // The player automatically moves "forward" => downward in this example
         playerY--;
 
-        // Or if you want them to move up the screen, you can do playerY--, 
-        // but let's assume y=0 is the top, so we might do playerY--;
-        // We'll invert it here so "forward" means up on the screen.
-        // We'll keep the camera locked to the player’s position
         cameraY = playerY - (MAP_HEIGHT / 2);
         if (cameraY < 0) cameraY = 0;
 
@@ -185,8 +190,7 @@ int main() {
         renderBuffer(backBuffer); // draw backBuffer to the screen
         refresh(); // ncurses refresh
 
-        // 4. Double buffering: copy backBuffer into frontBuffer if you want to compare changes, etc.
-        // Not strictly necessary, but here's where you'd do it:
+        // 4. Double buffering: copy backBuffer into frontBuffer
         copyBuffer(frontBuffer, backBuffer);
 
         // 5. Frame time control
