@@ -7,10 +7,10 @@
 
 /* FIRST DRAFT BASED OFF OF CODE FROM CHATGPT */
 
-// auto level = level4;
+// auto level = level1;
 auto level = readLevelFromFile("levelscroll.txt");
 // Game constants
-const int FPS = 10;
+const int FPS = 30;
 const double FRAME_TIME = 1000.0 / FPS; // in milliseconds
 
 // The map dimensions
@@ -18,12 +18,13 @@ const int MAP_WIDTH = 40;
 const int MAP_HEIGHT = 40;
 
 // Player attributes
-int playerX = level[0].size() / 2;   // Start horizontally centered
+int playerX = level[level.size() - 2].size() / 2;   // Start horizontally centered
 int playerY = level.size() - 1;  // Player starts within the level
 
 // The "camera" or the forward progress measure
 int cameraY = 0;  // We'll treat the top as y=0, increasing downward
 int cameraX = 0;  // We'll treat the left as x=0, increasing rightward
+
 
 
 
@@ -193,14 +194,15 @@ int main() {
     bool dir_pressed = false;
     int last_key = 0;
 
+    
     while (running) {
         auto frameStart = std::chrono::steady_clock::now();
-
         // 1. Input
         int ch = getch(); // Non-blocking due to nodelay()
         if (ch != ERR) {
             while(getch() == ch);
         }
+            size_t rowWidth = level[playerY].size();
             if(last_key != 0){
                 // Continue moving in the last direction without any key press
                 if( last_key == 'a' || last_key == KEY_LEFT){
@@ -209,7 +211,7 @@ int main() {
                     }
                 }
                 if( last_key == 'd' || last_key == KEY_RIGHT){
-                    if (playerX < MAP_WIDTH - 2) {
+                    if (playerX < (int)rowWidth - 1) {
                         playerX++;
                     }
                 }
@@ -234,7 +236,7 @@ int main() {
                     break;
                 case KEY_RIGHT:
                 case 'd':
-                    if (playerX < MAP_WIDTH - 2) {
+                    if (playerX < (int)rowWidth - 1) {
                         // Check if possible to move the player 2 spots right instead
                         // if (playerX < MAP_WIDTH - 3 && level[playerY][playerX + 2] != '#') {
                         //     playerX += 2;
@@ -268,8 +270,26 @@ int main() {
         cameraY = playerY - (MAP_HEIGHT / 2);
         if (cameraY < 0) cameraY = 0;
 
-        cameraX = playerX - (MAP_WIDTH / 2);
+        int deadZoneLeft  = (MAP_WIDTH / 2) - 5;
+        int deadZoneRight = (MAP_WIDTH / 2) + 5;
+        
+        
+        // 1. Calculate the world coordinates for the dead zone edges
+        int worldDeadZoneLeft  = cameraX + deadZoneLeft;
+        int worldDeadZoneRight = cameraX + deadZoneRight;
+
+        // 2. If the player crosses left boundary, shift camera left
+        if (playerX < worldDeadZoneLeft) {
+            cameraX -= (worldDeadZoneLeft - playerX);
+        }
+        // 3. If player crosses right boundary, shift camera right
+        else if (playerX > worldDeadZoneRight) {
+            cameraX += (playerX - worldDeadZoneRight);
+        }
+
+        // 4. Clamp camera so it doesn’t go negative or past the level’s max width
         if (cameraX < 0) cameraX = 0;
+        
 
         // Check collision
         if (checkCollision()) {

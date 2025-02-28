@@ -1,6 +1,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 // We'll create a small level (map). '.' is empty space, '#' is terrain
 // For simplicity, let's define it as a static 2D layout, or we can store it in a vector.
@@ -643,6 +644,14 @@ std::vector<std::string> readLevelFromFile(const std::string& filePath) {
     }
     std::string line;
     while (std::getline(file, line)) {
+        // Strip trailing whitespace only
+        std::size_t endPos = line.find_last_not_of(" \t\r\n\v\f");
+        if (endPos != std::string::npos) {
+            line.erase(endPos + 1);
+        } else {
+            // If the line contains only whitespace, clear it
+            line.clear();
+        }
         lines.push_back(line);
     }
     file.close();
