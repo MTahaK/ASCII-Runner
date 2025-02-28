@@ -7,9 +7,10 @@
 
 /* FIRST DRAFT BASED OFF OF CODE FROM CHATGPT */
 
-auto level = level5;
+// auto level = level4;
+auto level = readLevelFromFile("levelscroll.txt");
 // Game constants
-const int FPS = 30;
+const int FPS = 10;
 const double FRAME_TIME = 1000.0 / FPS; // in milliseconds
 
 // The map dimensions
@@ -17,11 +18,12 @@ const int MAP_WIDTH = 40;
 const int MAP_HEIGHT = 40;
 
 // Player attributes
-int playerX = MAP_WIDTH / 2;   // Start horizontally centered
-int playerY = level.size() - 2;  // Player starts within the level
+int playerX = level[0].size() / 2;   // Start horizontally centered
+int playerY = level.size() - 1;  // Player starts within the level
 
 // The "camera" or the forward progress measure
 int cameraY = 0;  // We'll treat the top as y=0, increasing downward
+int cameraX = 0;  // We'll treat the left as x=0, increasing rightward
 
 
 
@@ -67,34 +69,94 @@ void renderBuffer(char buffer[MAP_HEIGHT][MAP_WIDTH]) {
 
 // Populate the backBuffer based on the level data, the camera offset, and the player's position
 // The backBuffer is essentially the next state of all objects on the screen.
+// void updateBackBuffer() {
+//     clearBuffer(backBuffer);
+
+//     // Draw level, offset by cameraY
+//     // We'll treat the top row of the screen as cameraY in the level
+//     for (int screenY = 0; screenY < MAP_HEIGHT; screenY++) {
+//         int levelY = screenY + cameraY;
+//         for(int screenX = 0; screenX < MAP_WIDTH; screenX++){
+//             int levelX = screenX + cameraX;
+//             if (levelY < 0 || levelY >= (int)level.size()) {
+//                 // outside the level, just fill with blanks
+//                 for (int x = 0; x < MAP_WIDTH; x++) {
+//                     backBuffer[screenY][x] = ' ';
+//                 }
+//             } else {
+//                 for (int x = 0; x < MAP_WIDTH; x++) {
+//                     // If within bounds, fill using the level geometry
+//                     backBuffer[screenY][x] = level[levelY][x];
+//                 }
+//             }
+//         }
+//         // Given we only scroll in the Y direction, we only perform
+//         // bounds checking in the vertical direction.
+        
+//     }
+
+//     // Draw the player if they're in view
+//     int playerScreenY = playerY - cameraY;
+//     if (playerScreenY >= 0 && playerScreenY < MAP_HEIGHT) {
+//         backBuffer[playerScreenY][playerX] = '^';
+//     }
+
+//     // Horizontal direction for horizontal scrolling
+//     for(int screenX = 0; screenX < MAP_WIDTH; screenX++){
+//         int levelX = screenX + cameraX;
+//         if(levelX < 0 || levelX >= (int)level[0].size()){
+//             for(int y = 0; y < MAP_HEIGHT; y++){
+//                 backBuffer[y][screenX] = ' ';
+//             }
+//         } else {
+//             for(int y = 0; y < MAP_HEIGHT; y++){
+//                 backBuffer[y][screenX] = level[y][levelX];
+//             }
+//         }
+//     }
+
+//     // Draw the player if they're in view
+//     int playerScreenX = playerX - cameraX;
+//     if (playerScreenX >= 0 && playerScreenX < MAP_WIDTH) {
+//         backBuffer[playerY][playerScreenX] = '^';
+//     }
+// }
+
 void updateBackBuffer() {
     clearBuffer(backBuffer);
 
-    // Draw level, offset by cameraY
-    // We'll treat the top row of the screen as cameraY in the level
+    // Single double-nested loop for Y and X
     for (int screenY = 0; screenY < MAP_HEIGHT; screenY++) {
         int levelY = screenY + cameraY;
-        // Given we only scroll in the Y direction, we only perform
-        // bounds checking in the vertical direction.
-        if (levelY < 0 || levelY >= (int)level.size()) {
-            // outside the level, just fill with blanks
-            for (int x = 0; x < MAP_WIDTH; x++) {
-                backBuffer[screenY][x] = ' ';
-            }
-        } else {
-            for (int x = 0; x < MAP_WIDTH; x++) {
-                // If within bounds, fill using the level geometry
-                backBuffer[screenY][x] = level[levelY][x];
+
+        for (int screenX = 0; screenX < MAP_WIDTH; screenX++) {
+            int levelX = screenX + cameraX;
+
+            // Check vertical bounds
+            if (levelY < 0 || levelY >= (int)level.size()) {
+                backBuffer[screenY][screenX] = ' ';
+            } else {
+                // Check horizontal bounds for this row
+                if (levelX < 0 || levelX >= (int)level[levelY].size()) {
+                    backBuffer[screenY][screenX] = ' ';
+                } else {
+                    // Copy the character from the level data
+                    backBuffer[screenY][screenX] = level[levelY][levelX];
+                }
             }
         }
     }
 
-    // Draw the player if they're in view
+    // Draw the player if it's in view
     int playerScreenY = playerY - cameraY;
-    if (playerScreenY >= 0 && playerScreenY < MAP_HEIGHT) {
-        backBuffer[playerScreenY][playerX] = '^';
+    int playerScreenX = playerX - cameraX;
+    if (playerScreenY >= 0 && playerScreenY < MAP_HEIGHT
+        && playerScreenX >= 0 && playerScreenX < MAP_WIDTH)
+    {
+        backBuffer[playerScreenY][playerScreenX] = '^';
     }
 }
+
 
 bool checkCollision() {
     int levelY = playerY;
@@ -127,6 +189,7 @@ int main() {
 
     bool running = true;
     bool win = false; // if the player reaches the end
+    bool lose = false; // if the player collides with a wall
     bool dir_pressed = false;
     int last_key = 0;
 
@@ -205,9 +268,13 @@ int main() {
         cameraY = playerY - (MAP_HEIGHT / 2);
         if (cameraY < 0) cameraY = 0;
 
+        cameraX = playerX - (MAP_WIDTH / 2);
+        if (cameraX < 0) cameraX = 0;
+
         // Check collision
         if (checkCollision()) {
             running = false;
+            lose = true;
         }
 
         // Check if we've reached the end of the level
@@ -232,17 +299,13 @@ int main() {
         if (elapsed < FRAME_TIME) {
             std::this_thread::sleep_for(std::chrono::milliseconds((int)(FRAME_TIME - elapsed)));
         }
+        if (win) {
+            endwin();
+            printf("You win! Would you like to play again?\n");
+        } else if (lose) {
+            endwin();
+            printf("Game over!\n");
+        }
     }
-
-    // Cleanup
-    endwin();
-
-    // Show win/lose result in normal console mode:
-    if (win) {
-        printf("You win!\n");
-    } else {
-        printf("Game over!\n");
-    }
-
     return 0;
 }
