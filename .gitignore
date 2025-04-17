@@ -1,0 +1,7 @@
+*.o
+*.exe
+*.out
+.vscode/
+build/
+ascii-runner
+
