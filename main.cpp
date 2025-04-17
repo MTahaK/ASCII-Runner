@@ -7,7 +7,7 @@
 
 
 // auto level = level1;
-auto level = readLevelFromFile("levelscroll.txt");
+// auto level = readLevelFromFile("levelscroll.txt");
 // Game constants
 const int FPS = 30;
 const double FRAME_TIME = 1000.0 / FPS; // in milliseconds
@@ -16,15 +16,20 @@ const double FRAME_TIME = 1000.0 / FPS; // in milliseconds
 const int MAP_WIDTH = 40;
 const int MAP_HEIGHT = 40;
 
-// Player attributes
-int playerX = level[level.size() - 2].size() / 2;   // Start horizontally centered
-int playerY = level.size() - 1;  // Player starts within the level
+// // Player attributes
+// int playerX = level[level.size() - 2].size() / 2;   // Start horizontally centered
+// int playerY = level.size() - 1;  // Player starts within the level
 
-// The "camera" or the forward progress measure
-int cameraY = 0;  // We'll treat the top as y=0, increasing downward
-int cameraX = 0;  // We'll treat the left as x=0, increasing rightward
+// // The "camera" or the forward progress measure
+// int cameraY = 0;  // We'll treat the top as y=0, increasing downward
+// int cameraX = 0;  // We'll treat the left as x=0, increasing rightward
 
-
+// Declare global variables without initialization 
+std::vector<std::string> level;
+int playerX;
+int playerY;
+int cameraX;
+int cameraY;
 
 
 // Double buffering for rendering without flicker
@@ -174,6 +179,8 @@ bool checkCollision() {
     return false;
 }
 
+
+
 int main() {
     // Initialize ncurses
     initscr();
@@ -181,8 +188,86 @@ int main() {
     cbreak();            // Disable line buffering
     curs_set(FALSE);     // Hide cursor
     keypad(stdscr, TRUE); // Capture special keys (arrows, etc.)
-    nodelay(stdscr, TRUE); // Non-blocking getch()
+    nodelay(stdscr, FALSE); // Accept user input
 
+
+    // Prompt for level type
+    mvprintw(MAP_HEIGHT / 2 - 2, (MAP_WIDTH / 2) - 15, "Select level source:");
+    mvprintw(MAP_HEIGHT / 2, (MAP_WIDTH / 2) - 15, "1 - Built-in levels");
+    mvprintw(MAP_HEIGHT / 2 + 1, (MAP_WIDTH / 2) - 15, "2 - Custom file");
+    mvprintw(MAP_HEIGHT / 2 + 3, (MAP_WIDTH / 2) - 15, "Enter choice (1/2): ");
+    refresh();
+
+    int choice = getch();
+
+    char levelInput[100];
+
+    clear();
+
+    if (choice == '1') {
+        mvprintw(MAP_HEIGHT / 2, (MAP_WIDTH / 2) - 15, "Enter built-in level name:");
+        refresh();
+        echo();
+        getnstr(levelInput, 99);
+        noecho();
+
+        std::string chosenLevel(levelInput);
+
+        if (chosenLevel == "level1") level = level1;
+        else if (chosenLevel == "level2") level = level2;
+        else if (chosenLevel == "level3") level = level3;
+        else if (chosenLevel == "level4") level = level4;
+        else if (chosenLevel == "level5") level = level5;
+        else if (chosenLevel == "altlevel") level = altlevel;
+        else {
+            endwin();
+            printf("Invalid built-in level name!\n");
+            return 1;
+        }
+    }
+    else if (choice == '2') {
+        mvprintw(MAP_HEIGHT / 2, (MAP_WIDTH / 2) - 15, "Enter level file path:");
+        refresh();
+        echo();
+        getnstr(levelInput, 99);
+        noecho();
+
+        level = readLevelFromFile(std::string(levelInput));
+    }
+    else {
+        endwin();
+        printf("Invalid choice!\n");
+        return 1;
+    }
+
+    // Initialize player and camera explicitly based on loaded level
+    playerX = level[level.size() - 2].size() / 2;
+    playerY = level.size() - 1;
+    cameraY = 0;
+    cameraX = 0;
+
+    // Prompt to start the game
+    clear();
+    mvprintw(MAP_HEIGHT / 2, (MAP_WIDTH / 2) - 10, "Press any key to start...");
+    refresh();
+    getch();
+
+    // Add a 3-second countdown explicitly before game starts
+    for (int countdown = 3; countdown > 0; countdown--) {
+        clear();
+        mvprintw(MAP_HEIGHT / 2, (MAP_WIDTH / 2), "%d", countdown);
+        refresh();
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+    // Display "Go!" explicitly
+    clear();
+    mvprintw(MAP_HEIGHT / 2, (MAP_WIDTH / 2) - 1, "Go!");
+    refresh();
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    nodelay(stdscr, TRUE); // Set non-blocking for gameplay
+    
     // Clear the front & back buffers initially
     clearBuffer(frontBuffer);
     clearBuffer(backBuffer);
