@@ -5,7 +5,7 @@ LIBS = -lncurses
 all: game
 
 game: main.cpp
-	$(CXX) $(CXXFLAGS) main.cpp -o game $(LIBS)
+	$(CXX) $(CXXFLAGS) main.cpp -o ascii-runner $(LIBS)
 
 clean:
 	rm -f game

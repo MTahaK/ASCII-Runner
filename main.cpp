@@ -336,7 +336,9 @@ int main() {
                 case 'q':
                     // Quit
                     running = false;
-                    break;
+                    endwin();
+                    printf("Game quit by user.\n");
+                    return 0;
                 case ' ':
                     // If spacebar is pressed, stop the sideways movement
                     last_key = 0;
