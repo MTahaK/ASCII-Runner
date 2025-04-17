@@ -5,7 +5,6 @@
 #include <string>
 #include "level.h"
 
-/* FIRST DRAFT BASED OFF OF CODE FROM CHATGPT */
 
 // auto level = level1;
 auto level = readLevelFromFile("levelscroll.txt");
@@ -28,13 +27,12 @@ int cameraX = 0;  // We'll treat the left as x=0, increasing rightward
 
 
 
-// Double buffers: We'll store two 2D char arrays
+// Double buffering for rendering without flicker
 char frontBuffer[MAP_HEIGHT][MAP_WIDTH];
 char backBuffer[MAP_HEIGHT][MAP_WIDTH];
 
 // Helper to copy one buffer to another
 void copyBuffer(char dest[MAP_HEIGHT][MAP_WIDTH], char src[MAP_HEIGHT][MAP_WIDTH]) {
-    // Simple character by character copy, row major
     for(int i = 0; i < MAP_HEIGHT; i++){
         for(int j = 0; j < MAP_WIDTH; j++){
             dest[i][j] = src[i][j];
@@ -123,6 +121,7 @@ void renderBuffer(char buffer[MAP_HEIGHT][MAP_WIDTH]) {
 //     }
 // }
 
+// Revised update function for horizontal scrolling support
 void updateBackBuffer() {
     clearBuffer(backBuffer);
 
@@ -137,7 +136,7 @@ void updateBackBuffer() {
             if (levelY < 0 || levelY >= (int)level.size()) {
                 backBuffer[screenY][screenX] = ' ';
             } else {
-                // Check horizontal bounds for this row
+                // Check horizontal bounds for this row (levelY is current row)
                 if (levelX < 0 || levelX >= (int)level[levelY].size()) {
                     backBuffer[screenY][screenX] = ' ';
                 } else {
@@ -264,13 +263,16 @@ int main() {
         
 
         // 2. Update logic
-        // The player automatically moves "forward" => downward in this example
+        // The player automatically moves "forward" => upward in this example
+        // (playerY decreases as the player moves up)
         playerY--;
 
         cameraY = playerY - (MAP_HEIGHT / 2);
         if (cameraY < 0) cameraY = 0;
 
-        int deadZoneLeft  = (MAP_WIDTH / 2) - 5;
+        // Deadzone is computed as 5 pixels on either side of the center
+        // of the screen, so the player can move left/right without moving the camera
+        int deadZoneLeft  = (MAP_WIDTH / 2) - 5;    
         int deadZoneRight = (MAP_WIDTH / 2) + 5;
         
         
@@ -298,7 +300,7 @@ int main() {
         }
 
         // Check if we've reached the end of the level
-        // Let's say the last row of the level is row 14 in 'level' vector, 
+        // ie if the last row of the level is row 14 in 'level' vector, 
         // so if the player has gone above row 1 or 0, they've "won".
         if (playerY <= 0) {
             running = false;
